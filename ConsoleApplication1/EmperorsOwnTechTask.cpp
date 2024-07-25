@@ -9,12 +9,11 @@
 
 struct Node;
 
-//Класс отвечающий за управление узлами
-class Network
+class Network //Класс отвечающий за управление узлами
 {
 public:
 
-	std::vector<Node*> nodes; //Векторный указатель
+	std::vector<Node*> nodes; //Векторный указатель на ноды
 
 	~Network() //Деструктор
 	{
@@ -45,11 +44,22 @@ public:
 					node->createEvent();
 					break;
 				case 2: //Узел подписывается на соседа
+					if (!nodes.empty())
+					{
+						Node* neighbor = nodes[rand() % nodes.size()];
+						node->subscribe(neighbor);
+					}
 					break;
 				case 3: //Узел отписывается от соседа
+					if (!node->subscriptions.empty())
+					{
+						auto it = node->subscriptions.begin();
+						std::advance(it, rand() % node->subscriptions.size());
+						node->unsubscribe(it->first);
+					}
 					break;
 				case 4: //Узел создает новый узел и подписывается на него
-					node->createAndSubscribe(Network& network); //!!!
+					node->createAndSubscribe(Network & network); //тут ошибка я так понимаю что проблема в вызове инстанса класса в качестве аргумента в классе
 					break;
 
 			}
@@ -70,9 +80,9 @@ public:
 	}
 };
 
-//Структура, представляющая узел в сети
-struct Node
+struct Node //Структура, представляющая узел в сети
 {
+	//я запутался в том где мне объявлять соседа это надо исправить
 	std::string name; //Имя узла
 	std::map<Node*, std::function<void(int)>> subscriptions; //Объект в котором хранятся подписки узла на другие узлы
 	std::vector<int> inputData; //Вектор полученных данных от другиъ узлов
@@ -83,7 +93,7 @@ struct Node
 	{
 		int event = rand() % 1000;
 		for (auto &sub : subscriptions)
-		{
+			{
 			sub.second(event);
 		}
 	}
@@ -127,4 +137,3 @@ int main()
 
 	return 0;
 }
-
