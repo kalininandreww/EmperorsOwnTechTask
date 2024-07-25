@@ -2,19 +2,63 @@
 //
 
 #include <iostream>
+#include <vector>
 
 struct Node;
 
 //Класс отвечающий за управление узлами
 class Network
 {
-	//git check
+	std::vector<Node*> nodes; //Векторный указатель
+
+	~Network() //Деструктор
+	{
+		for (auto node : nodes)
+		{
+			delete node;
+		}
+	}
+
+	void addNode(Node* node) //Метод для добавления узлов
+	{
+
+	}
+
+	void update() //Метод для обновления узлов
+	{
+
+	}
 };
 
 //Структура, представляющая узел в сети
 struct Node
 {
+	std::string name; //Имя узла
+	
+	void createEvent() //Метод создания события и рассылки его
+	{
 
+	}
+
+	void subscribe() //Метод подписки
+	{
+
+	}
+
+	void unsubscribe() //Метод отписки
+	{
+
+	}
+
+	void createNewNode() //Метод созлания нового узла и подписки на него
+	{
+
+	}
+
+	bool hasNoSubscribers() const //Метод проверки наличия подписчиков
+	{
+
+	}
 };
 
 
