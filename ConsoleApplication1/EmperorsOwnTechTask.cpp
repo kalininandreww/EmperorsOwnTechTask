@@ -3,12 +3,18 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <map>
+#include <functional>
+
 
 struct Node;
 
 //Класс отвечающий за управление узлами
 class Network
 {
+public:
+
 	std::vector<Node*> nodes; //Векторный указатель
 
 	~Network() //Деструктор
@@ -21,11 +27,46 @@ class Network
 
 	void addNode(Node* node) //Метод для добавления узлов
 	{
-
+		nodes.push_back(node);
 	}
 
 	void update() //Метод для обновления узлов
 	{
+		std::vector<Node*> toDestruct; //Вектор указателй нод без подписок
+
+		for (auto node : nodes)
+		{
+			int event = rand() % 5;
+
+			switch (event)
+			{
+				case 0: //Бездействие
+					break;
+				case 1: //Узел создает событие
+					node->createEvent();
+					break;
+				case 2: //Узел подписывается на соседа
+					break;
+				case 3: //Узел отписывается от соседа
+					break;
+				case 4: //Узел создает новый узел и подписывается на него
+					node->createAndSubscribe();
+					break;
+
+			}
+		
+
+			if (node->hasNoSubscribtions()) //Проверка наличия подписок
+			{
+				toDestruct.push_back(node);
+			}
+		}
+		
+		for (auto node : toDestruct) //Удаление
+		{
+			nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end()); //
+			delete node;
+		}
 
 	}
 };
@@ -34,9 +75,11 @@ class Network
 struct Node
 {
 	std::string name; //Имя узла
+	std::map<Node*, std::function<void(int)>> subscriptions; 
 	
 	void createEvent() //Метод создания события и рассылки его
 	{
+		int event = rand() % 1000
 
 	}
 
@@ -50,12 +93,12 @@ struct Node
 
 	}
 
-	void createNewNode() //Метод созлания нового узла и подписки на него
+	void createAndSubscribe() //Метод созлания нового узла и подписки на него
 	{
 
 	}
 
-	bool hasNoSubscribers() const //Метод проверки наличия подписчиков
+	bool hasNoSubscribtions() const //Метод проверки наличия подписок
 	{
 
 	}
