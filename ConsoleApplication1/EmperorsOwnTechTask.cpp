@@ -1,11 +1,11 @@
-// ConsoleApplication1.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <map>
 #include <functional>
+#include <numeric>
+#include <string>
+
 
 
 struct Node;
@@ -50,7 +50,7 @@ public:
 				case 3: //Узел отписывается от соседа
 					break;
 				case 4: //Узел создает новый узел и подписывается на него
-					node->createAndSubscribe();
+					node->createAndSubscribe(Network& network); //!!!
 					break;
 
 			}
@@ -75,35 +75,59 @@ public:
 struct Node
 {
 	std::string name; //Имя узла
-	std::map<Node*, std::function<void(int)>> subscriptions; 
+	std::map<Node*, std::function<void(int)>> subscriptions; //Объект в котором хранятся подписки узла на другие узлы
+	std::vector<int> inputData; //Вектор полученных данных от другиъ узлов
+	 
+	Node(const std::string& name) : name(name) {}
 	
 	void createEvent() //Метод создания события и рассылки его
 	{
-		int event = rand() % 1000
-
+		int event = rand() % 1000;
+		for (auto sub : subscriptions) //найти почему тут ошибка
+		{
+			sub.second(event);
+		}
 	}
 
-	void subscribe() //Метод подписки
+	void subscribe(Node* neighbor) //Метод подписки
 	{
 
+		subscriptions[neighbor] = [this, neighbor](int data)
+			{
+				if (neighbor == this) return;
+				inputData.push_back(data);
+				int summ = std::accumulate(inputData.begin(), inputData.end(), 0);
+					std::cout << neighbor->name << "->" << this->name << ": S = " << summ << std::endl; //вывод всех отправленных
+			};
 	}
 
-	void unsubscribe() //Метод отписки
+	void unsubscribe(Node* neighbor) //Метод отписки
 	{
-
+		subscriptions.erase(neighbor);
 	}
 
-	void createAndSubscribe() //Метод созлания нового узла и подписки на него
+	void createAndSubscribe(Network& network) //Метод созлания нового узла и подписки на него
 	{
-
+		Node* newNode = new Node("Узел" + std::to_string(network.nodes.size() + 1));
 	}
 
 	bool hasNoSubscribtions() const //Метод проверки наличия подписок
 	{
-
+		return subscriptions.empty();
 	}
 };
 
+int main()
+{
+	Network network;
+
+	while (network.nodes.size() > 0)
+	{
+		network.update();
+	}
+
+	return 0;
+}
 
 //Создайте сеть абстрактных узлов, и метод ее обновления, работающий по следующему принципу :
 
