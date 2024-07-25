@@ -7,7 +7,6 @@
 #include <string>
 
 
-
 struct Node;
 
 //Класс отвечающий за управление узлами
@@ -83,7 +82,7 @@ struct Node
 	void createEvent() //Метод создания события и рассылки его
 	{
 		int event = rand() % 1000;
-		for (auto sub : subscriptions) //найти почему тут ошибка
+		for (auto &sub : subscriptions)
 		{
 			sub.second(event);
 		}
