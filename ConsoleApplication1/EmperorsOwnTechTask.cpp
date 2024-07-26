@@ -81,12 +81,18 @@ public:
 	{
 		std::vector<Node*> toDestruct; //Vector of pointers to nodes without subscriptions
 
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_real_distribution<> dis(0.0, 1.0);
+
+		double doNothingProb = doNothingProbability / 100.0;
+		double eventStartProb = eventStartProbability / 100.0;
+		double subscribeProb = subscribeProbability / 100.0;
+		double unsubscribeProb = unsubscribeProbability / 100.0;
+		double createAndSubscribeProb = createAndSubscribeProbability / 100.0;
+
 		for (auto node : nodes)
 		{
-			std::random_device rd;
-			std::mt19937 gen(rd());
-			std::uniform_real_distribution<> dis(0.0, 1.0);
-
 			double randomNum = dis(gen);
 			if (randomNum < eventStartProbability)
 			{
@@ -135,6 +141,8 @@ public:
 void Node::createAndSubscribe(Network& network) //Function that creates a new node and subscribes to it
 {
 	Node* newNode = new Node("Узел" + std::to_string(network.nodes.size() + 1));
+	network.addNode(newNode);
+	subscribe(newNode);
 }
 
 void startNetwork(Network& network) //Method for initializing the Network and getting parameters
@@ -169,15 +177,16 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 		}
 	}
 
-	for (int i = 0; i < initialNodes; i++) //Loop that creates initial nodes
+	for (int i = 0; i < initialNodes; ++i) //Loop that creates initial nodes
 	{
 		Node* node = new Node("Узел" + std::to_string(i));
+
 		network.addNode(node);
 	}
 
 	for (auto node : network.nodes) //Loop that adds initial random subscriptions
 	{
-		for (int i = 0; i < rand() % 2; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			Node* neighbor = network.nodes[rand() % network.nodes.size()];
 			if (neighbor != node)
@@ -197,8 +206,7 @@ int main() //Main method that runs the programm
 	while (network.nodes.size() > 0)
 	{
 		network.update();
-		std::cout << network.nodes.size();
 	}
-	
+	std::cout << "Не осталось ни одного узла";
 	return 0;
 }
