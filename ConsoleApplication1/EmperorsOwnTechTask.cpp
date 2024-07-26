@@ -9,13 +9,13 @@
 
 struct Node;
 
-class Network //Класс отвечающий за управление узлами
+class Network //Class that manages nodes
 {
 public:
 
-	std::vector<Node*> nodes; //Векторный указатель на ноды
+	std::vector<Node*> nodes; //Vector pointer to nodes
 
-	~Network() //Деструктор
+	~Network() //Destructor
 	{
 		for (auto node : nodes)
 		{
@@ -23,14 +23,14 @@ public:
 		}
 	}
 
-	void addNode(Node* node) //Метод для добавления узлов
+	void addNode(Node* node) //Method to add nodes
 	{
 		nodes.push_back(node);
 	}
 
-	void update() //Метод для обновления узлов
+	void update() //Method that manages actions and destruction of nodes
 	{
-		std::vector<Node*> toDestruct; //Вектор указателй нод без подписок
+		std::vector<Node*> toDestruct; //Vector of pointers to nodes without subscriptions
 
 		for (auto node : nodes)
 		{
@@ -38,19 +38,19 @@ public:
 
 			switch (event)
 			{
-				case 0: //Бездействие
+				case 0: //Node does nothing
 					break;
-				case 1: //Узел создает событие
+				case 1: //Node creates an event
 					node->createEvent();
 					break;
-				case 2: //Узел подписывается на соседа
+				case 2: //Node subscribes to neighbor
 					if (!nodes.empty())
 					{
 						Node* neighbor = nodes[rand() % nodes.size()];
 						node->subscribe(neighbor);
 					}
 					break;
-				case 3: //Узел отписывается от соседа
+				case 3: //Node unsubscribes from neighbor
 					if (!node->subscriptions.empty())
 					{
 						auto it = node->subscriptions.begin();
@@ -58,38 +58,38 @@ public:
 						node->unsubscribe(it->first);
 					}
 					break;
-				case 4: //Узел создает новый узел и подписывается на него
+				case 4: //Node creates new node and subscribes to it
 					node->createAndSubscribe(Network & network); //тут ошибка я так понимаю что проблема в вызове инстанса класса в качестве аргумента в классе
 					break;
 
 			}
 		
 
-			if (node->hasNoSubscribtions()) //Проверка наличия подписок
+			if (node->hasNoSubscribtions()) //Checking if the node is sobscribed to other nodes
 			{
 				toDestruct.push_back(node);
 			}
 		}
 		
-		for (auto node : toDestruct) //Удаление
+		for (auto node : toDestruct) //Destruction of nodes without subscriptions
 		{
-			nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end()); //
+			nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end());
 			delete node;
 		}
 
 	}
 };
 
-struct Node //Структура, представляющая узел в сети
+struct Node //Structure for nodes
 {
 	//я запутался в том где мне объявлять соседа это надо исправить
-	std::string name; //Имя узла
-	std::map<Node*, std::function<void(int)>> subscriptions; //Объект в котором хранятся подписки узла на другие узлы
-	std::vector<int> inputData; //Вектор полученных данных от другиъ узлов
+	std::string name; //Node's name
+	std::map<Node*, std::function<void(int)>> subscriptions; //Object that stores data about subscriptions
+	std::vector<int> inputData; //Vector of recived data
 	 
 	Node(const std::string& name) : name(name) {}
 	
-	void createEvent() //Метод создания события и рассылки его
+	void createEvent() //Function that creates an event
 	{
 		int event = rand() % 1000;
 		for (auto &sub : subscriptions)
@@ -98,7 +98,7 @@ struct Node //Структура, представляющая узел в сети
 		}
 	}
 
-	void subscribe(Node* neighbor) //Метод подписки
+	void subscribe(Node* neighbor) //Function that subscribes a node to another one
 	{
 
 		subscriptions[neighbor] = [this, neighbor](int data)
@@ -110,23 +110,23 @@ struct Node //Структура, представляющая узел в сети
 			};
 	}
 
-	void unsubscribe(Node* neighbor) //Метод отписки
+	void unsubscribe(Node* neighbor) //Function that unsubscribes a node to another one
 	{
 		subscriptions.erase(neighbor);
 	}
 
-	void createAndSubscribe(Network& network) //Метод созлания нового узла и подписки на него
+	void createAndSubscribe(Network& network) //Function that creates a new node and subscribes to it
 	{
 		Node* newNode = new Node("Узел" + std::to_string(network.nodes.size() + 1));
 	}
 
-	bool hasNoSubscribtions() const //Метод проверки наличия подписок
+	bool hasNoSubscribtions() const //Function checking if a node is subscribed to another one
 	{
 		return subscriptions.empty();
 	}
 };
 
-int main()
+int main() //Main method that has the loop in it
 {
 	Network network;
 
