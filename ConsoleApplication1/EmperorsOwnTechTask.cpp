@@ -35,27 +35,33 @@ struct Node //Structure for nodes
 
 	void subscribe(Node* neighbor) //Function that subscribes a node to another one
 	{
-
 		subscriptions[neighbor] = [this, neighbor](int data)
 			{
 				if (neighbor == this) return;
 				inputData.push_back(data);
 				int summ = std::accumulate(inputData.begin(), inputData.end(), 0);
-				std::cout << neighbor->name << "->" << this->name << ": S = " << summ << std::endl; //вывод всех отправленных
+				std::cout << neighbor->name << "->" << this->name << ": S = " << summ << std::endl;
+				std::cout << neighbor->name << "->" << this->name << ": N = " << inputData.size() << std::endl;
 			};
 	}
 
 	void unsubscribe(Node* neighbor) //Function that unsubscribes a node to another one
 	{
-		subscriptions.erase(neighbor);
+		auto it = subscriptions.find(neighbor);
+		if (it != subscriptions.end())
+		{
+			subscriptions.erase(neighbor);
+		}
 	}
+	
 
-	void createAndSubscribe(Network& network); //Function that creates a new node and subscribes to it
 
-	bool hasNoSubscribtions() const //Function checking if a node is subscribed to another one
-	{
-		return subscriptions.empty();
-	}
+void createAndSubscribe(Network& network); //Function that creates a new node and subscribes to it
+
+bool hasNoSubscriptions() const //Function checking if a node is subscribed to another one
+{
+	return subscriptions.empty();
+}
 };
 
 class Network //Class that manages nodes
@@ -85,12 +91,6 @@ public:
 		std::mt19937 gen(rd());
 		std::uniform_real_distribution<> dis(0.0, 1.0);
 
-		double doNothingProb = doNothingProbability / 100.0;
-		double eventStartProb = eventStartProbability / 100.0;
-		double subscribeProb = subscribeProbability / 100.0;
-		double unsubscribeProb = unsubscribeProbability / 100.0;
-		double createAndSubscribeProb = createAndSubscribeProbability / 100.0;
-
 		for (auto node : nodes)
 		{
 			double randomNum = dis(gen);
@@ -98,15 +98,18 @@ public:
 			{
 				node->createEvent();
 			}
-			else if (randomNum < eventStartProbability + subscribeProbability)
+			else if (randomNum < (eventStartProbability + subscribeProbability))
 			{
 				if (!nodes.empty())
 				{
 					Node* neighbor = nodes[rand() % nodes.size()];
-					node->subscribe(neighbor);
+					if (neighbor != node)
+					{
+						node->subscribe(neighbor);
+					}
 				}
 			}
-			else if (randomNum < eventStartProbability + subscribeProbability + unsubscribeProbability)
+			else if (randomNum < (eventStartProbability + subscribeProbability + unsubscribeProbability))
 			{
 				if (!node->subscriptions.empty())
 				{
@@ -115,14 +118,12 @@ public:
 					node->unsubscribe(it->first);
 				}
 			}
-			else if (randomNum < eventStartProbability + subscribeProbability + unsubscribeProbability + createAndSubscribeProbability)
+			else if (randomNum < (eventStartProbability + subscribeProbability + unsubscribeProbability + createAndSubscribeProbability))
 			{
 				node->createAndSubscribe(*this);
 			}
 
-
-
-			if (node->hasNoSubscribtions()) //Checking if the node is subscribed to other nodes
+			if (node->hasNoSubscriptions()) //Checking if the node is subscribed to other nodes
 			{
 				toDestruct.push_back(node);
 			}
@@ -130,6 +131,10 @@ public:
 
 		for (auto node : toDestruct) //Destruction of nodes without subscriptions
 		{
+			for (auto& n : nodes)
+			{
+				n->unsubscribe(node);
+			}
 			nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end());
 			delete node;
 		}
@@ -170,6 +175,11 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 
 		if (totalProbability == 100)
 		{
+			doNothingProbability = doNothingProbability / 100.0;
+			eventStartProbability = eventStartProbability / 100.0;
+			subscribeProbability = subscribeProbability / 100.0;
+			unsubscribeProbability = unsubscribeProbability / 100.0;
+			createAndSubscribeProbability = createAndSubscribeProbability / 100.0;
 			hundred = true;
 		} else
 		{
@@ -180,19 +190,22 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 	for (int i = 0; i < initialNodes; ++i) //Loop that creates initial nodes
 	{
 		Node* node = new Node("Узел" + std::to_string(i));
-
 		network.addNode(node);
 	}
 
 	for (auto node : network.nodes) //Loop that adds initial random subscriptions
 	{
-		for (int i = 0; i < 2; i++)
+		for (int i = 0; i < 2; ++i)
 		{
-			Node* neighbor = network.nodes[rand() % network.nodes.size()];
-			if (neighbor != node)
+			if (!network.nodes.empty())
 			{
-				node->subscribe(neighbor);
+				Node* neighbor = network.nodes[rand() % network.nodes.size()];
+				if (neighbor != node)
+				{
+					node->subscribe(neighbor);
+				}
 			}
+			
 		}
 	}
 }
