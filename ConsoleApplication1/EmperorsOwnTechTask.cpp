@@ -5,6 +5,7 @@
 #include <functional>
 #include <numeric>
 #include <string>
+#include <random>
 
 
 struct Node //Structure for nodes
@@ -74,38 +75,40 @@ public:
 
 		for (auto node : nodes)
 		{
-			int event = rand() % 100;
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_real_distribution<> dis(0.0, 1.0);
 
-			switch (event)
+			double randomNum = dis(gen);
+			if (randomNum < eventStartProbability)
 			{
-			case 0: //Node does nothing
-				break;
-			case 1: //Node creates an event
 				node->createEvent();
-				break;
-			case 2: //Node subscribes to neighbor
+			}
+			else if (randomNum < eventStartProbability + subscribeProbability)
+			{
 				if (!nodes.empty())
 				{
 					Node* neighbor = nodes[rand() % nodes.size()];
 					node->subscribe(neighbor);
 				}
-				break;
-			case 3: //Node unsubscribes from neighbor
+			}
+			else if (randomNum < eventStartProbability + subscribeProbability + unsubscribeProbability)
+			{
 				if (!node->subscriptions.empty())
 				{
 					auto it = node->subscriptions.begin();
 					std::advance(it, rand() % node->subscriptions.size());
 					node->unsubscribe(it->first);
 				}
-				break;
-			case 4: //Node creates new node and subscribes to it
+			}
+			else if (randomNum < eventStartProbability + subscribeProbability + unsubscribeProbability + createAndSubscribeProbability)
+			{
 				node->createAndSubscribe(*this);
-				break;
-
 			}
 
 
-			if (node->hasNoSubscribtions()) //Checking if the node is sobscribed to other nodes
+
+			if (node->hasNoSubscribtions()) //Checking if the node is subscribed to other nodes
 			{
 				toDestruct.push_back(node);
 			}
@@ -126,16 +129,15 @@ void Node::createAndSubscribe(Network& network) //Function that creates a new no
 	Node* newNode = new Node("Узел" + std::to_string(network.nodes.size() + 1));
 }
 
+double doNothingProbability;
+double eventStartProbability;
+double subscribeProbability;
+double unsubscribeProbability;
+double createAndSubscribeProbability;
 
 void startNetwork(Network& network) //Method for initializing the Network and getting parameters
 {
 	int initialNodes;
-
-	double doNothingProbability;
-	double eventStartProbability;
-	double subscribeProbability;
-	double unsubscribeProbability;
-	double createAndSubscribeProbability;
 
 	std::cout << "Введите количество начальных улов: ";
 	std::cin >> initialNodes;
@@ -160,8 +162,7 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 		{
 			hundred = true;
 			std::cout << createAndSubscribeProbability; //delete later, this is for testing
-		}
-		else
+		} else
 		{
 			std::cout << "Сумма вероятностей должна быть равна 100, попробуйте снова";
 		}
@@ -188,6 +189,7 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 
 int main() //Main method that runs the programm
 {
+	system("chcp 1251");
 	Network network;
 	startNetwork(network);
 
