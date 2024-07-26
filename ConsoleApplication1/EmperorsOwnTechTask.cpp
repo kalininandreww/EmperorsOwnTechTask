@@ -35,32 +35,46 @@ struct Node //Structure for nodes
 
 	void subscribe(Node* neighbor) //Function that subscribes a node to another one
 	{
+		std::cout << "sub start" << std::endl;
+		if (neighbor == nullptr || neighbor == this) return;
 		subscriptions[neighbor] = [this, neighbor](int data)
 			{
-				if (neighbor == this) return;
+				std::cout << "inside loop" << std::endl;
 				inputData.push_back(data);
+				std::cout << "push_back" << std::endl;
 				int summ = std::accumulate(inputData.begin(), inputData.end(), 0);
 				std::cout << neighbor->name << "->" << this->name << ": S = " << summ << std::endl;
 				std::cout << neighbor->name << "->" << this->name << ": N = " << inputData.size() << std::endl;
 			};
+		std::cout << "sub end" << std::endl;
 	}
 
-	void unsubscribe(Node* neighbor) //Function that unsubscribes a node to another one
+	void unsubscribe(Node* neighbor) //Function that unsubscribes a node tofrom another one
 	{
-		auto it = subscriptions.find(neighbor);
-		if (it != subscriptions.end())
+		if (neighbor == nullptr)
 		{
-			subscriptions.erase(neighbor);
+			std::cerr << "Error: null pointer passed to unsubscribe" << std::endl;
+			return;
 		}
+		auto it = subscriptions.find(neighbor);
+		if (it == subscriptions.end()) {
+			std::cerr << "Error: neighbor not found in subscriptions" << std::endl;
+			return;
+		}
+		else
+		{
+			subscriptions.erase(it);
+		}
+		subscriptions.erase(neighbor);
 	}
 	
 
 
-void createAndSubscribe(Network& network); //Function that creates a new node and subscribes to it
+	void createAndSubscribe(Network& network); //Function that creates a new node and subscribes to it
 
-bool hasNoSubscriptions() const //Function checking if a node is subscribed to another one
+	bool hasNoSubscriptions() const //Function checking if a node is subscribed to another one
 {
-	return subscriptions.empty();
+		return subscriptions.empty();
 }
 };
 
@@ -83,7 +97,7 @@ public:
 		nodes.push_back(node);
 	}
 
-	void update() //Method that manages actions and destruction of nodes
+	void update(Network& network) //Method that manages actions and destruction of nodes
 	{
 		std::vector<Node*> toDestruct; //Vector of pointers to nodes without subscriptions
 
@@ -102,7 +116,7 @@ public:
 			{
 				if (!nodes.empty())
 				{
-					Node* neighbor = nodes[rand() % nodes.size()];
+					Node* neighbor = nodes[rand() % network.nodes.size()];
 					if (neighbor != node)
 					{
 						node->subscribe(neighbor);
@@ -120,7 +134,7 @@ public:
 			}
 			else if (randomNum < (eventStartProbability + subscribeProbability + unsubscribeProbability + createAndSubscribeProbability))
 			{
-				node->createAndSubscribe(*this);
+				node->createAndSubscribe(network);
 			}
 
 			if (node->hasNoSubscriptions()) //Checking if the node is subscribed to other nodes
@@ -131,12 +145,14 @@ public:
 
 		for (auto node : toDestruct) //Destruction of nodes without subscriptions
 		{
+			std::cout << "destruct start" << std::endl;
 			for (auto& n : nodes)
 			{
 				n->unsubscribe(node);
 			}
-			nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end());
+			network.nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end());
 			delete node;
+			std::cout << "destruct end" << std::endl;
 		}
 
 	}
@@ -145,9 +161,11 @@ public:
 
 void Node::createAndSubscribe(Network& network) //Function that creates a new node and subscribes to it
 {
-	Node* newNode = new Node("Узел" + std::to_string(network.nodes.size() + 1));
+	std::cout << "createAndSubscribe start"<< std::endl;
+	Node* newNode = new Node("Узел" + std::to_string(network.nodes.size()));
 	network.addNode(newNode);
-	subscribe(newNode);
+	this->subscribe(newNode);
+	std::cout << "createAndSubscribe end"<<std::endl;
 }
 
 void startNetwork(Network& network) //Method for initializing the Network and getting parameters
@@ -205,7 +223,6 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 					node->subscribe(neighbor);
 				}
 			}
-			
 		}
 	}
 }
@@ -218,7 +235,8 @@ int main() //Main method that runs the programm
 
 	while (network.nodes.size() > 0)
 	{
-		network.update();
+		network.update(network);
+		std::cout << "1 cycle"<<std::endl;
 	}
 	std::cout << "Не осталось ни одного узла";
 	return 0;
