@@ -8,6 +8,14 @@
 #include <random>
 
 
+class Network;
+
+double doNothingProbability;
+double eventStartProbability;
+double subscribeProbability;
+double unsubscribeProbability;
+double createAndSubscribeProbability;
+
 struct Node //Structure for nodes
 {
 	std::string name; //Node's name
@@ -129,12 +137,6 @@ void Node::createAndSubscribe(Network& network) //Function that creates a new no
 	Node* newNode = new Node("Узел" + std::to_string(network.nodes.size() + 1));
 }
 
-double doNothingProbability;
-double eventStartProbability;
-double subscribeProbability;
-double unsubscribeProbability;
-double createAndSubscribeProbability;
-
 void startNetwork(Network& network) //Method for initializing the Network and getting parameters
 {
 	int initialNodes;
@@ -156,15 +158,14 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 		std::cout << "Введите вероятность создания и подписки на новый узел в процентах: ";
 		std::cin >> createAndSubscribeProbability;
 		
-		double totalProbability = doNothingProbability + eventStartProbability + subscribeProbability + subscribeProbability + unsubscribeProbability + createAndSubscribeProbability;
+		double totalProbability = doNothingProbability + eventStartProbability + subscribeProbability + unsubscribeProbability + createAndSubscribeProbability;
 
 		if (totalProbability == 100)
 		{
 			hundred = true;
-			std::cout << createAndSubscribeProbability; //delete later, this is for testing
 		} else
 		{
-			std::cout << "Сумма вероятностей должна быть равна 100, попробуйте снова";
+			std::cout << "Сумма вероятностей должна быть равна 100, попробуйте снова\n";
 		}
 	}
 
@@ -196,7 +197,8 @@ int main() //Main method that runs the programm
 	while (network.nodes.size() > 0)
 	{
 		network.update();
+		std::cout << network.nodes.size();
 	}
-
+	
 	return 0;
 }
