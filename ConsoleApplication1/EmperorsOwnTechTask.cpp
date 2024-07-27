@@ -8,7 +8,7 @@
 #include <random>
 #include <memory>
 #include <unordered_set>
-
+#include <Windows.h>
 
 class Network;
 struct Node;
@@ -38,49 +38,31 @@ struct Node: std::enable_shared_from_this<Node> //Structure for nodes
 
 	void subscribe(Node* neighbor) //Function that subscribes a node to another one
 	{
-		std::cout << "sub start" << std::endl;
 		if (neighbor == nullptr || neighbor == this) return;
-		std::cout << "!neighbor == nullptr || !neighbor == this" << std::endl;
 		subscriptions[neighbor] = [this, neighbor](int data)
 			{
-				std::cout << "inside loop" << std::endl;
 				inputData.push_back(data);
-				std::cout << "push_back" << std::endl;
 				int summ = std::accumulate(inputData.begin(), inputData.end(), 0);
 				std::cout << neighbor->name << "->" << this->name << ": S = " << summ << std::endl;
 				std::cout << neighbor->name << "->" << this->name << ": N = " << inputData.size() << std::endl;
 			};
-		std::cout << "sub end" << std::endl;
 	}
 
 	void unsubscribe(Node* neighbor) //Function that unsubscribes a node from another one
 	{
 		if (neighbor == nullptr)
 		{
-			std::cerr << "Error: null pointer passed to unsubscribe" << std::endl;
 			return;
 		}
-		//auto it = subscriptions.find(neighbor);
-		//if (it <= subscriptions.end())
-		//{
-		//	subscriptions.erase(it);
-		//}
-		//else
-		//{
-		//	std::cerr << "Error: neighbor not found in subscriptions" << std::endl;
-		//	return;
-		//}
 		subscriptions.erase(neighbor);
 	}
 	
-
-
 	void createAndSubscribe(Network& network); //Function that creates a new node and subscribes to it
 
 	bool hasNoSubscriptions() const //Function checking if a node is subscribed to another one
-{
+	{
 		return subscriptions.empty();
-}
+	}
 };
 
 class Network //Class that manages nodes
@@ -140,30 +122,23 @@ public:
 				toDestruct.push_back(node);
 			}
 		}
-
 		for (auto node : toDestruct) //Destruction of nodes without subscriptions
 		{
-			std::cout << "destruct start" << std::endl;
 			for (auto n : nodes)
 			{
 				n->unsubscribe(node);
 			}
 			nodes.erase(node);
 			delete node;
-			std::cout << "destruct end" << std::endl;
 		}
-
 	}
-	
 };
 
 void Node::createAndSubscribe(Network& network) //Function that creates a new node and subscribes to it
 {
-	std::cout << "createAndSubscribe start"<< std::endl;
 	Node* newNode = new Node("Узел" + std::to_string(network.nodes.size()));
 	network.addNode(newNode);
 	this->subscribe(newNode);
-	std::cout << "createAndSubscribe end"<<std::endl;
 }
 
 void startNetwork(Network& network) //Method for initializing the Network and getting parameters
@@ -201,6 +176,7 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 		{
 			std::cout << "Сумма вероятностей должна быть равна 100, попробуйте снова\n";
 		}
+		std::cout << " Чтобы остановить программу нажмите 'X'\n";
 	}
 
 	for (int i = 0; i < initialNodes; ++i) //Loop that creates initial nodes
@@ -233,8 +209,12 @@ int main() //Main method that runs the programm
 
 	while (network.nodes.size() > 0)
 	{
+		if (GetKeyState('X'))
+		{
+			std::cout << "Программа была остановленна вручную";
+			exit(0);
+		}
 		network.update();
-		std::cout << "1 cycle"<<std::endl;
 	}
 	std::cout << "Не осталось ни одного узла";
 	return 0;
