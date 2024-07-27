@@ -6,9 +6,12 @@
 #include <numeric>
 #include <string>
 #include <random>
+#include <memory>
+#include <unordered_set>
 
 
 class Network;
+struct Node;
 
 double doNothingProbability;
 double eventStartProbability;
@@ -16,7 +19,7 @@ double subscribeProbability;
 double unsubscribeProbability;
 double createAndSubscribeProbability;
 
-struct Node //Structure for nodes
+struct Node: std::enable_shared_from_this<Node> //Structure for nodes
 {
 	std::string name; //Node's name
 	std::map<Node*, std::function<void(int)>> subscriptions; //Object that stores data about subscriptions
@@ -37,6 +40,7 @@ struct Node //Structure for nodes
 	{
 		std::cout << "sub start" << std::endl;
 		if (neighbor == nullptr || neighbor == this) return;
+		std::cout << "!neighbor == nullptr || !neighbor == this" << std::endl;
 		subscriptions[neighbor] = [this, neighbor](int data)
 			{
 				std::cout << "inside loop" << std::endl;
@@ -49,22 +53,23 @@ struct Node //Structure for nodes
 		std::cout << "sub end" << std::endl;
 	}
 
-	void unsubscribe(Node* neighbor) //Function that unsubscribes a node tofrom another one
+	void unsubscribe(Node* neighbor) //Function that unsubscribes a node from another one
 	{
 		if (neighbor == nullptr)
 		{
 			std::cerr << "Error: null pointer passed to unsubscribe" << std::endl;
 			return;
 		}
-		auto it = subscriptions.find(neighbor);
-		if (it == subscriptions.end()) {
-			std::cerr << "Error: neighbor not found in subscriptions" << std::endl;
-			return;
-		}
-		else
-		{
-			subscriptions.erase(it);
-		}
+		//auto it = subscriptions.find(neighbor);
+		//if (it <= subscriptions.end())
+		//{
+		//	subscriptions.erase(it);
+		//}
+		//else
+		//{
+		//	std::cerr << "Error: neighbor not found in subscriptions" << std::endl;
+		//	return;
+		//}
 		subscriptions.erase(neighbor);
 	}
 	
@@ -82,22 +87,14 @@ class Network //Class that manages nodes
 {
 public:
 
-	std::vector<Node*> nodes; //Vector pointer to all the nodes
-
-	~Network() //Destructor
-	{
-		for (auto node : nodes)
-		{
-			delete node;
-		}
-	}
+	std::unordered_set<Node*> nodes; //Vector shared pointer to all the nodes
 
 	void addNode(Node* node) //Method to add nodes
 	{
-		nodes.push_back(node);
+		nodes.insert(node);
 	}
 
-	void update(Network& network) //Method that manages actions and destruction of nodes
+	void update() //Method that manages actions and destruction of nodes
 	{
 		std::vector<Node*> toDestruct; //Vector of pointers to nodes without subscriptions
 
@@ -116,7 +113,8 @@ public:
 			{
 				if (!nodes.empty())
 				{
-					Node* neighbor = nodes[rand() % network.nodes.size()];
+					//Node* neighbor = *nodes.begin(rand() % nodes.size());
+					Node* neighbor = *std::next(std::begin(nodes), (rand() % nodes.size() - 1) + 1);
 					if (neighbor != node)
 					{
 						node->subscribe(neighbor);
@@ -134,7 +132,7 @@ public:
 			}
 			else if (randomNum < (eventStartProbability + subscribeProbability + unsubscribeProbability + createAndSubscribeProbability))
 			{
-				node->createAndSubscribe(network);
+				node->createAndSubscribe(*this);
 			}
 
 			if (node->hasNoSubscriptions()) //Checking if the node is subscribed to other nodes
@@ -146,11 +144,11 @@ public:
 		for (auto node : toDestruct) //Destruction of nodes without subscriptions
 		{
 			std::cout << "destruct start" << std::endl;
-			for (auto& n : nodes)
+			for (auto n : nodes)
 			{
 				n->unsubscribe(node);
 			}
-			network.nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end());
+			nodes.erase(node);
 			delete node;
 			std::cout << "destruct end" << std::endl;
 		}
@@ -217,7 +215,7 @@ void startNetwork(Network& network) //Method for initializing the Network and ge
 		{
 			if (!network.nodes.empty())
 			{
-				Node* neighbor = network.nodes[rand() % network.nodes.size()];
+				Node* neighbor = *std::next(std::begin(network.nodes), (rand() % network.nodes.size() - 1)+1);
 				if (neighbor != node)
 				{
 					node->subscribe(neighbor);
@@ -235,7 +233,7 @@ int main() //Main method that runs the programm
 
 	while (network.nodes.size() > 0)
 	{
-		network.update(network);
+		network.update();
 		std::cout << "1 cycle"<<std::endl;
 	}
 	std::cout << "Не осталось ни одного узла";
